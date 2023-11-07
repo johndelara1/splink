@@ -2324,7 +2324,14 @@ class Linker:
         )
         recs = df_truth_space.as_record_dict()
         return roc_chart(recs)
-
+        
+    def decimal_to_float(value):
+        if isinstance(value, Decimal):
+            return float(value)
+        if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+            return None  # JSON does not support NaN or Infinity, we replace it with None (which becomes null in JSON)
+        return value
+        
     def precision_recall_chart_from_labels_table(
         self,
         labels_splinkdataframe_or_table_name,
@@ -2386,7 +2393,11 @@ class Linker:
             match_weight_round_to_nearest=match_weight_round_to_nearest,
         )
         recs = df_truth_space.as_record_dict()
-        return precision_recall_chart(recs)
+        processed_data = []
+        for record in recs:
+            processed_record = {k: decimal_to_float(v) for k, v in record.items()}
+            processed_data.append(processed_record)
+        return precision_recall_chart(processed_data)
 
     def accuracy_chart_from_labels_table(
         self,
